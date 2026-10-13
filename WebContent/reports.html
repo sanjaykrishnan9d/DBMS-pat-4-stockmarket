@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Reports | Stock Market Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">📈</div>
+        <div class="brand-title">ApexTrader</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="stocks.html" class="nav-link">
+          <span class="nav-icon">💹</span>
+          <span class="nav-text">Market Watch</span>
+        </a>
+        <a href="portfolio.html" class="nav-link">
+          <span class="nav-icon">💼</span>
+          <span class="nav-text">My Portfolio</span>
+        </a>
+        <a href="transactions.html" class="nav-link">
+          <span class="nav-icon">📜</span>
+          <span class="nav-text">Order History</span>
+        </a>
+        <a href="reports.html" class="nav-link active">
+          <span class="nav-icon">📑</span>
+          <span class="nav-text">Financial Reports</span>
+        </a>
+        <a href="stocks.html?tab=admin" id="adminNavLink" class="nav-link" style="display: none;">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Admin Stocks</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div id="sidebarUserAvatar" class="user-avatar">U</div>
+          <div class="user-info">
+            <div id="sidebarUserName" class="user-name">Loading...</div>
+            <div id="sidebarUserRole" class="user-role">Trader</div>
+          </div>
+        </div>
+        <button id="btnLogout" class="btn btn-outline btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="page-title-group">
+          <h1>Financial Statement & Performance Reports</h1>
+          <p>Audited profit/loss analysis, realized capital gains, and stock-wise portfolio aggregates.</p>
+        </div>
+
+        <div class="top-bar-actions">
+          <div class="balance-chip">
+            <div>
+              <div class="balance-label">Cash Balance</div>
+              <div id="headerCashBalance" class="balance-value">$0.00</div>
+            </div>
+            <button id="btnAddFunds" class="btn btn-success btn-sm">
+              + Add Funds
+            </button>
+          </div>
+          <button id="btnPrintReport" class="btn btn-outline btn-sm" onclick="window.print()">
+            🖨️ Print Statement
+          </button>
+        </div>
+      </header>
+
+      <!-- 6 Metrics Financial Statement Cards -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Total Historical Purchases</span>
+            <span class="metric-icon">💳</span>
+          </div>
+          <div id="repPurchases" class="metric-value">$0.00</div>
+          <div id="repBuyCount" class="metric-sub text-muted">0 Buy Orders</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Total Sales Proceeds</span>
+            <span class="metric-icon">💵</span>
+          </div>
+          <div id="repSales" class="metric-value">$0.00</div>
+          <div id="repSellCount" class="metric-sub text-muted">0 Sell Orders</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Active Portfolio Cost</span>
+            <span class="metric-icon">💼</span>
+          </div>
+          <div id="repCost" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Current unliquidated cost basis</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Realized Profit / Loss</span>
+            <span class="metric-icon">⚖️</span>
+          </div>
+          <div id="repRealizedPL" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Locked-in capital gains from sales</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Unrealized Profit / Loss</span>
+            <span class="metric-icon">📈</span>
+          </div>
+          <div id="repUnrealizedPL" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Paper gains on active holdings</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Net Combined Return</span>
+            <span class="metric-icon">🏆</span>
+          </div>
+          <div id="repNetPL" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Realized + Unrealized Net P&L</div>
+        </div>
+      </section>
+
+      <!-- Visual Breakdown Charts -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-header">
+            <div class="panel-title">Asset Value by Holding</div>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="reportAssetChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-header">
+            <div class="panel-title">Cash Flow & Capital Flow (USD)</div>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="reportCashFlowChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock-wise Holdings Summary Table -->
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Stock-Wise Portfolio Allocation Summary</div>
+          <button id="btnRefreshReports" class="btn btn-outline btn-sm">🔄 Refresh Statement</button>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Security Symbol</th>
+                <th>Company Legal Entity</th>
+                <th>Sector</th>
+                <th>Quantity</th>
+                <th>Avg Purchase Price</th>
+                <th>Market Price</th>
+                <th>Cost Basis</th>
+                <th>Market Valuation</th>
+                <th>Unrealized P&L</th>
+              </tr>
+            </thead>
+            <tbody id="reportHoldingsTableBody">
+              <tr>
+                <td colspan="9" class="empty-state">Loading aggregated portfolio statement...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Explanation of Accounting Mechanics -->
+      <section class="panel" style="background: rgba(14, 21, 38, 0.6); border-color: rgba(59, 130, 246, 0.2);">
+        <div class="panel-header">
+          <div class="panel-title" style="font-size: 1rem; color: var(--accent-cyan);">
+            📚 DBMS Lab Accounting & Double-Counting Prevention
+          </div>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+          <p>
+            <strong>Prevention of Double-Counting:</strong>
+            Traditional naive implementations count total purchase orders without subtracting cost of liquidated positions, resulting in inflated portfolios.
+            Our Oracle database design isolates:
+          </p>
+          <ul style="margin-left: 20px; margin-top: 6px;">
+            <li><strong>Total Historical Purchases:</strong> Absolute cash transferred into equities over account lifetime (<code>SUM(TOTAL_AMOUNT) WHERE TYPE='BUY'</code>).</li>
+            <li><strong>Current Cost Basis:</strong> Cost basis of shares currently retained in <code>PORTFOLIO</code> table.</li>
+            <li><strong>Cost Basis of Sold Shares:</strong> <code>Total Historical Purchases - Active Cost Basis</code>.</li>
+            <li><strong>Realized P&L:</strong> <code>Total Sales Proceeds - Cost Basis of Sold Shares</code>.</li>
+            <li><strong>Unrealized P&L:</strong> <code>Current Market Value of Active Portfolio - Active Cost Basis</code>.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Deposit Modal -->
+  <div id="depositModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Deposit Simulated Cash</div>
+        <button type="button" class="modal-close" onclick="closeModal('depositModal')">&times;</button>
+      </div>
+      <form id="depositForm">
+        <div class="form-group">
+          <label class="form-label" for="depositAmount">Amount to Add (USD)</label>
+          <input type="number" id="depositAmount" class="form-control" placeholder="e.g. 5000" min="1" max="1000000" step="any" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('depositModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Confirm Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

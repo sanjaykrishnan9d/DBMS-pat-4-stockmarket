@@ -1,0 +1,304 @@
+-- ============================================================================
+-- PROJECT: STOCK MARKET MANAGEMENT SYSTEM
+-- DBMS LAB PROJECT - ORACLE DATABASE DDL & DML SCRIPT
+-- COMPATIBLE WITH: Oracle Database 11g XE / 12c / 18c / 19c / 21c via SQL*Plus
+-- ============================================================================
+
+SET DEFINE OFF;
+SET SERVEROUTPUT ON;
+SET FEEDBACK ON;
+SET LINESIZE 200;
+SET PAGESIZE 100;
+
+PROMPT ============================================================================
+PROMPT Initializing Stock Market Management Database Schema...
+PROMPT ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- STEP 1: SAFE CLEANUP OF EXISTING OBJECTS (IF ANY)
+-- ----------------------------------------------------------------------------
+BEGIN
+    FOR t IN (SELECT table_name FROM user_tables WHERE table_name IN 
+              ('STOCK_TRANSACTION', 'PORTFOLIO', 'USER_ACCOUNT', 'STOCK', 'USERS')) LOOP
+        EXECUTE IMMEDIATE 'DROP TABLE ' || t.table_name || ' CASCADE CONSTRAINTS';
+        DBMS_OUTPUT.PUT_LINE('Dropped table: ' || t.table_name);
+    END LOOP;
+END;
+/
+
+BEGIN
+    FOR s IN (SELECT sequence_name FROM user_sequences WHERE sequence_name IN 
+              ('USER_SEQ', 'STOCK_SEQ', 'ACCOUNT_SEQ', 'TXN_SEQ', 'PORTFOLIO_SEQ')) LOOP
+        EXECUTE IMMEDIATE 'DROP SEQUENCE ' || s.sequence_name;
+        DBMS_OUTPUT.PUT_LINE('Dropped sequence: ' || s.sequence_name);
+    END LOOP;
+END;
+/
+
+-- ----------------------------------------------------------------------------
+-- STEP 2: CREATE SEQUENCES FOR PRIMARY KEYS
+-- ----------------------------------------------------------------------------
+PROMPT Creating Sequences...
+
+CREATE SEQUENCE USER_SEQ
+    START WITH 1001
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE STOCK_SEQ
+    START WITH 5001
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE ACCOUNT_SEQ
+    START WITH 7001
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE TXN_SEQ
+    START WITH 90001
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+CREATE SEQUENCE PORTFOLIO_SEQ
+    START WITH 3001
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- ----------------------------------------------------------------------------
+-- STEP 3: CREATE TABLES WITH CONSTRAINTS
+-- ----------------------------------------------------------------------------
+PROMPT Creating Tables...
+
+-- 1. USERS TABLE
+CREATE TABLE USERS (
+    USER_ID         NUMBER(10)          NOT NULL,
+    FULL_NAME       VARCHAR2(100)       NOT NULL,
+    EMAIL           VARCHAR2(100)       NOT NULL,
+    PHONE           VARCHAR2(20)        NOT NULL,
+    USERNAME        VARCHAR2(50)        NOT NULL,
+    PASSWORD_HASH   VARCHAR2(120)       NOT NULL,
+    ROLE            VARCHAR2(20)        DEFAULT 'USER' NOT NULL,
+    CREATED_AT      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ACCOUNT_STATUS  VARCHAR2(20)        DEFAULT 'ACTIVE' NOT NULL,
+    CONSTRAINT PK_USERS PRIMARY KEY (USER_ID),
+    CONSTRAINT UQ_USERS_EMAIL UNIQUE (EMAIL),
+    CONSTRAINT UQ_USERS_USERNAME UNIQUE (USERNAME),
+    CONSTRAINT CHK_USERS_ROLE CHECK (ROLE IN ('USER', 'ADMIN')),
+    CONSTRAINT CHK_USERS_STATUS CHECK (ACCOUNT_STATUS IN ('ACTIVE', 'SUSPENDED', 'CLOSED'))
+);
+
+-- 2. STOCK TABLE (Demonstration stocks)
+CREATE TABLE STOCK (
+    STOCK_ID        NUMBER(10)          NOT NULL,
+    SYMBOL          VARCHAR2(20)        NOT NULL,
+    STOCK_NAME      VARCHAR2(100)       NOT NULL,
+    COMPANY         VARCHAR2(150)       NOT NULL,
+    SECTOR          VARCHAR2(50)        NOT NULL,
+    CURRENT_PRICE   NUMBER(12, 2)       NOT NULL,
+    ACTIVE_STATUS   VARCHAR2(20)        DEFAULT 'ACTIVE' NOT NULL,
+    UPDATED_AT      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT PK_STOCK PRIMARY KEY (STOCK_ID),
+    CONSTRAINT UQ_STOCK_SYMBOL UNIQUE (SYMBOL),
+    CONSTRAINT CHK_STOCK_PRICE CHECK (CURRENT_PRICE > 0),
+    CONSTRAINT CHK_STOCK_STATUS CHECK (ACTIVE_STATUS IN ('ACTIVE', 'INACTIVE'))
+);
+
+-- 3. USER_ACCOUNT TABLE (Cash balance for simulated trading)
+CREATE TABLE USER_ACCOUNT (
+    ACCOUNT_ID      NUMBER(10)          NOT NULL,
+    USER_ID         NUMBER(10)          NOT NULL,
+    CASH_BALANCE    NUMBER(14, 2)       DEFAULT 0.00 NOT NULL,
+    CREATED_AT      TIMESTAMP           DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT PK_USER_ACCOUNT PRIMARY KEY (ACCOUNT_ID),
+    CONSTRAINT UQ_ACCOUNT_USER UNIQUE (USER_ID),
+    CONSTRAINT FK_ACCOUNT_USER FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_ACCOUNT_BALANCE CHECK (CASH_BALANCE >= 0)
+);
+
+-- 4. STOCK_TRANSACTION TABLE (Audited order log)
+CREATE TABLE STOCK_TRANSACTION (
+    TRANSACTION_ID   NUMBER(12)         NOT NULL,
+    USER_ID          NUMBER(10)         NOT NULL,
+    STOCK_ID         NUMBER(10)         NULL,
+    TRANSACTION_TYPE VARCHAR2(10)       NOT NULL,
+    QUANTITY         NUMBER(10)         NOT NULL,
+    PRICE_PER_SHARE  NUMBER(12, 2)      NOT NULL,
+    TOTAL_AMOUNT     NUMBER(14, 2)      NOT NULL,
+    TRANSACTION_DATE TIMESTAMP          DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    STATUS           VARCHAR2(20)       DEFAULT 'COMPLETED' NOT NULL,
+    CONSTRAINT PK_STOCK_TRANSACTION PRIMARY KEY (TRANSACTION_ID),
+    CONSTRAINT FK_TXN_USER FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_TXN_STOCK FOREIGN KEY (STOCK_ID) REFERENCES STOCK(STOCK_ID) ON DELETE SET NULL,
+    CONSTRAINT CHK_TXN_TYPE CHECK (TRANSACTION_TYPE IN ('BUY', 'SELL', 'DEPOSIT')),
+    CONSTRAINT CHK_TXN_QTY CHECK (QUANTITY >= 0),
+    CONSTRAINT CHK_TXN_PRICE CHECK (PRICE_PER_SHARE >= 0),
+    CONSTRAINT CHK_TXN_TOTAL CHECK (TOTAL_AMOUNT > 0),
+    CONSTRAINT CHK_TXN_STATUS CHECK (STATUS IN ('COMPLETED', 'FAILED', 'CANCELLED'))
+);
+
+-- 5. PORTFOLIO TABLE (Aggregated holdings per user per stock)
+CREATE TABLE PORTFOLIO (
+    PORTFOLIO_ID      NUMBER(10)        NOT NULL,
+    USER_ID           NUMBER(10)        NOT NULL,
+    STOCK_ID          NUMBER(10)        NOT NULL,
+    QUANTITY          NUMBER(10)        DEFAULT 0 NOT NULL,
+    AVERAGE_BUY_PRICE NUMBER(12, 2)     DEFAULT 0.00 NOT NULL,
+    UPDATED_AT        TIMESTAMP         DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT PK_PORTFOLIO PRIMARY KEY (PORTFOLIO_ID),
+    CONSTRAINT UQ_USER_STOCK UNIQUE (USER_ID, STOCK_ID),
+    CONSTRAINT FK_PORTFOLIO_USER FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    CONSTRAINT FK_PORTFOLIO_STOCK FOREIGN KEY (STOCK_ID) REFERENCES STOCK(STOCK_ID) ON DELETE CASCADE,
+    CONSTRAINT CHK_PORTFOLIO_QTY CHECK (QUANTITY >= 0),
+    CONSTRAINT CHK_PORTFOLIO_AVG_PRICE CHECK (AVERAGE_BUY_PRICE >= 0)
+);
+
+-- ----------------------------------------------------------------------------
+-- STEP 4: CREATE TRIGGERS FOR AUTO-INCREMENT PRIMARY KEYS
+-- ----------------------------------------------------------------------------
+PROMPT Creating Triggers...
+
+CREATE OR REPLACE TRIGGER TRG_USERS_PK
+BEFORE INSERT ON USERS
+FOR EACH ROW
+BEGIN
+    IF :NEW.USER_ID IS NULL THEN
+        SELECT USER_SEQ.NEXTVAL INTO :NEW.USER_ID FROM DUAL;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER TRG_STOCK_PK
+BEFORE INSERT ON STOCK
+FOR EACH ROW
+BEGIN
+    IF :NEW.STOCK_ID IS NULL THEN
+        SELECT STOCK_SEQ.NEXTVAL INTO :NEW.STOCK_ID FROM DUAL;
+    END IF;
+    :NEW.UPDATED_AT := CURRENT_TIMESTAMP;
+END;
+/
+
+CREATE OR REPLACE TRIGGER TRG_ACCOUNT_PK
+BEFORE INSERT ON USER_ACCOUNT
+FOR EACH ROW
+BEGIN
+    IF :NEW.ACCOUNT_ID IS NULL THEN
+        SELECT ACCOUNT_SEQ.NEXTVAL INTO :NEW.ACCOUNT_ID FROM DUAL;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER TRG_TRANSACTION_PK
+BEFORE INSERT ON STOCK_TRANSACTION
+FOR EACH ROW
+BEGIN
+    IF :NEW.TRANSACTION_ID IS NULL THEN
+        SELECT TXN_SEQ.NEXTVAL INTO :NEW.TRANSACTION_ID FROM DUAL;
+    END IF;
+END;
+/
+
+CREATE OR REPLACE TRIGGER TRG_PORTFOLIO_PK
+BEFORE INSERT ON PORTFOLIO
+FOR EACH ROW
+BEGIN
+    IF :NEW.PORTFOLIO_ID IS NULL THEN
+        SELECT PORTFOLIO_SEQ.NEXTVAL INTO :NEW.PORTFOLIO_ID FROM DUAL;
+    END IF;
+    :NEW.UPDATED_AT := CURRENT_TIMESTAMP;
+END;
+/
+
+-- ----------------------------------------------------------------------------
+-- STEP 5: CREATE PERFORMANCE INDEXES
+-- ----------------------------------------------------------------------------
+PROMPT Creating Indexes...
+
+CREATE INDEX IDX_STOCK_SECTOR ON STOCK(SECTOR);
+CREATE INDEX IDX_TXN_USER_DATE ON STOCK_TRANSACTION(USER_ID, TRANSACTION_DATE DESC);
+CREATE INDEX IDX_TXN_STOCK ON STOCK_TRANSACTION(STOCK_ID);
+CREATE INDEX IDX_PORTFOLIO_USER ON PORTFOLIO(USER_ID);
+
+-- ----------------------------------------------------------------------------
+-- STEP 6: INSERT DEMONSTRATION STOCK MARKET DATA
+-- ----------------------------------------------------------------------------
+PROMPT Inserting Sample Demonstration Stocks...
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('AAPL', 'Apple Inc. Common Stock', 'Apple Inc.', 'Technology', 178.50, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('MSFT', 'Microsoft Corporation', 'Microsoft Corporation', 'Technology', 415.20, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('GOOGL', 'Alphabet Inc. Class A', 'Alphabet Inc.', 'Communication Services', 165.75, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('AMZN', 'Amazon.com Inc.', 'Amazon.com Inc.', 'Consumer Cyclical', 182.30, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('NVDA', 'NVIDIA Corporation', 'NVIDIA Corporation', 'Semiconductors', 875.40, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('TSLA', 'Tesla Inc.', 'Tesla Inc.', 'Automotive', 172.60, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('JPM', 'JPMorgan Chase & Co.', 'JPMorgan Chase & Co.', 'Financial Services', 198.90, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('BAC', 'Bank of America Corporation', 'Bank of America Corporation', 'Financial Services', 37.85, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('JNJ', 'Johnson & Johnson', 'Johnson & Johnson', 'Healthcare', 152.10, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('PFE', 'Pfizer Inc.', 'Pfizer Inc.', 'Healthcare', 28.40, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('XOM', 'Exxon Mobil Corporation', 'Exxon Mobil Corporation', 'Energy', 119.50, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('KO', 'The Coca-Cola Company', 'The Coca-Cola Company', 'Consumer Defensive', 62.45, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('DIS', 'The Walt Disney Company', 'The Walt Disney Company', 'Entertainment', 112.80, 'ACTIVE');
+
+INSERT INTO STOCK (SYMBOL, STOCK_NAME, COMPANY, SECTOR, CURRENT_PRICE, ACTIVE_STATUS) 
+VALUES ('INTC', 'Intel Corporation', 'Intel Corporation', 'Semiconductors', 34.25, 'INACTIVE');
+
+COMMIT;
+
+-- ----------------------------------------------------------------------------
+-- STEP 7: SEED DEMONSTRATION ACCOUNTS
+-- Note: Both demo users use BCrypt hash for passwords:
+-- 'admin' -> password: 'Admin@123'
+-- 'student' -> password: 'Student@123'
+-- ----------------------------------------------------------------------------
+PROMPT Inserting Demonstration Users with Secure BCrypt Passwords...
+
+-- Real BCrypt hash generated by BCrypt with salt $2a$10$
+INSERT INTO USERS (USER_ID, FULL_NAME, EMAIL, PHONE, USERNAME, PASSWORD_HASH, ROLE, ACCOUNT_STATUS)
+VALUES (1001, 'System Administrator', 'admin@stockmarket.local', '+1-555-0199', 'admin', 
+        '$2a$10$1RqkU5/CwvThEP78SU4NkeL8da5mtQ49Gd2gMTLsqbzvJaz9oOgl6', 'ADMIN', 'ACTIVE');
+
+INSERT INTO USER_ACCOUNT (ACCOUNT_ID, USER_ID, CASH_BALANCE)
+VALUES (7001, 1001, 100000.00);
+
+INSERT INTO USERS (USER_ID, FULL_NAME, EMAIL, PHONE, USERNAME, PASSWORD_HASH, ROLE, ACCOUNT_STATUS)
+VALUES (1002, 'College Student', 'student@stockmarket.local', '+1-555-0144', 'student',
+        '$2a$10$yHMtnGrPrXmP8c5WSICwPu4gjmLqJV1Tza4NMh4XEAorR7WCVvSj.', 'USER', 'ACTIVE');
+
+INSERT INTO USER_ACCOUNT (ACCOUNT_ID, USER_ID, CASH_BALANCE)
+VALUES (7002, 1002, 25000.00);
+
+COMMIT;
+
+PROMPT ============================================================================
+PROMPT Schema created and seeded successfully in STOCK_USER!
+PROMPT ============================================================================

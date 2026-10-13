@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Watch | Stock Market Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">📈</div>
+        <div class="brand-title">ApexTrader</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="stocks.html" class="nav-link active">
+          <span class="nav-icon">💹</span>
+          <span class="nav-text">Market Watch</span>
+        </a>
+        <a href="portfolio.html" class="nav-link">
+          <span class="nav-icon">💼</span>
+          <span class="nav-text">My Portfolio</span>
+        </a>
+        <a href="transactions.html" class="nav-link">
+          <span class="nav-icon">📜</span>
+          <span class="nav-text">Order History</span>
+        </a>
+        <a href="reports.html" class="nav-link">
+          <span class="nav-icon">📑</span>
+          <span class="nav-text">Financial Reports</span>
+        </a>
+        <a href="stocks.html?tab=admin" id="adminNavLink" class="nav-link" style="display: none;">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Admin Stocks</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div id="sidebarUserAvatar" class="user-avatar">U</div>
+          <div class="user-info">
+            <div id="sidebarUserName" class="user-name">Loading...</div>
+            <div id="sidebarUserRole" class="user-role">Trader</div>
+          </div>
+        </div>
+        <button id="btnLogout" class="btn btn-outline btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="page-title-group">
+          <h1>Market Watch & Stock Directory</h1>
+          <p>Real-time exchange listings, live search, and order execution.</p>
+        </div>
+
+        <div class="top-bar-actions">
+          <div class="balance-chip">
+            <div>
+              <div class="balance-label">Cash Balance</div>
+              <div id="headerCashBalance" class="balance-value">$0.00</div>
+            </div>
+            <button id="btnAddFunds" class="btn btn-success btn-sm">
+              + Add Funds
+            </button>
+          </div>
+          <!-- Admin-only Add Stock Button -->
+          <button id="btnAdminAddStock" class="btn btn-primary btn-sm" style="display: none;" onclick="openAdminCreateModal()">
+            + Add New Stock
+          </button>
+        </div>
+      </header>
+
+      <!-- Educational Notice -->
+      <div style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: var(--radius-sm); padding: 12px 18px; margin-bottom: 24px; font-size: 0.85rem; color: #a5f3fc; display: flex; align-items: center; gap: 10px;">
+        <span>ℹ️</span>
+        <span>All stock quotes and prices displayed are simulated demonstration data for educational DBMS laboratory purposes.</span>
+      </div>
+
+      <!-- Filters Panel -->
+      <section class="panel" style="padding: 18px 24px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+          <div style="display: flex; gap: 12px; flex: 1; min-width: 280px; max-width: 650px;">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by Symbol (e.g. AAPL) or Company name..." style="flex: 2;">
+            <select id="sectorFilter" class="form-control" style="flex: 1;">
+              <option value="ALL">All Sectors</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="stockCountBadge" class="badge badge-info">0 Stocks</span>
+            <button id="btnRefreshStocks" class="btn btn-outline btn-sm">🔄 Refresh</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Stocks Table Panel -->
+      <section class="panel">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Stock ID</th>
+                <th>Symbol</th>
+                <th>Company Name</th>
+                <th>Sector</th>
+                <th>Price per Share</th>
+                <th>Market Status</th>
+                <th style="text-align: right;">Trading Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stocksTableBody">
+              <tr>
+                <td colspan="7" class="empty-state">Loading active equities from Oracle database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODALS: STOCK DETAILS, ADMIN STOCK MANAGER, TRADE, DEPOSIT, RECEIPT
+       ======================================================================== -->
+
+  <!-- Stock Details Modal -->
+  <div id="detailsModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Security Specification</div>
+        <button type="button" class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
+      </div>
+      <div class="receipt-card" style="border-style: solid; border-color: var(--border-color);">
+        <div class="receipt-row">
+          <span class="receipt-label">Ticker Symbol:</span>
+          <span id="detailSymbol" class="receipt-val highlight">AAPL</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Security Name:</span>
+          <span id="detailStockName" class="receipt-val">Apple Inc. Common Stock</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Company:</span>
+          <span id="detailCompany" class="receipt-val">Apple Inc.</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Industry Sector:</span>
+          <span id="detailSector" class="badge badge-info">Technology</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Database Price:</span>
+          <span id="detailPrice" class="receipt-val highlight">$178.50</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Trading Status:</span>
+          <span id="detailStatus" class="badge badge-success">ACTIVE</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Last Database Update:</span>
+          <span id="detailUpdatedAt" class="receipt-val">-</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('detailsModal')">Close</button>
+        <button type="button" id="btnDetailTrade" class="btn btn-primary">Trade This Stock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Stock Add/Edit Modal -->
+  <div id="adminStockModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div id="adminStockModalTitle" class="modal-title">Add New Stock (Administrator)</div>
+        <button type="button" class="modal-close" onclick="closeModal('adminStockModal')">&times;</button>
+      </div>
+      <form id="adminStockForm">
+        <input type="hidden" id="adminStockId">
+        <input type="hidden" id="adminStockAction" value="create">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="adminSymbol">Ticker Symbol *</label>
+            <input type="text" id="adminSymbol" class="form-control" placeholder="e.g. MSFT" required uppercase>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminPrice">Initial Price (USD) *</label>
+            <input type="number" id="adminPrice" class="form-control" placeholder="100.00" step="0.01" min="0.01" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="adminStockName">Stock Display Name *</label>
+          <input type="text" id="adminStockName" class="form-control" placeholder="Microsoft Corporation Common Stock" required>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="adminCompany">Company Legal Name *</label>
+            <input type="text" id="adminCompany" class="form-control" placeholder="Microsoft Corporation" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminSector">Sector *</label>
+            <input type="text" id="adminSector" class="form-control" placeholder="Technology" required>
+          </div>
+        </div>
+
+        <div class="form-group" id="adminStatusGroup" style="display: none;">
+          <label class="form-label" for="adminActiveStatus">Exchange Status</label>
+          <select id="adminActiveStatus" class="form-control">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('adminStockModal')">Cancel</button>
+          <button type="submit" id="btnAdminStockSubmit" class="btn btn-primary">Save Stock to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Universal Trade Modal -->
+  <div id="tradeModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Execute Order</div>
+        <button type="button" class="modal-close" onclick="closeModal('tradeModal')">&times;</button>
+      </div>
+      <form id="tradeForm">
+        <input type="hidden" id="tradeStockId">
+        <div style="background: var(--bg-card); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div id="tradeStockSymbol" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan);">AAPL</div>
+            <div id="tradeStockCompany" style="font-size: 0.85rem; color: var(--text-muted);">Apple Inc.</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Current Market Price</div>
+            <div id="tradeStockPrice" style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">$178.50</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tradeType">Order Action</label>
+          <select id="tradeType" class="form-control">
+            <option value="BUY">BUY - Purchase Shares</option>
+            <option value="SELL">SELL - Liquidate Holdings</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tradeQuantity">Number of Shares</label>
+          <input type="number" id="tradeQuantity" class="form-control" value="1" min="1" step="1" required>
+        </div>
+
+        <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 18px; display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Estimated Order Total:</span>
+          <strong id="tradeEstimatedTotal" style="color: var(--accent-emerald); font-size: 1.1rem;">$0.00</strong>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('tradeModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Transmit Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Deposit Modal -->
+  <div id="depositModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Deposit Simulated Cash</div>
+        <button type="button" class="modal-close" onclick="closeModal('depositModal')">&times;</button>
+      </div>
+      <form id="depositForm">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Note: This simulated virtual deposit increases your demo buying power. No real payment occurs.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="depositAmount">Amount to Add (USD)</label>
+          <input type="number" id="depositAmount" class="form-control" placeholder="e.g. 5000" min="1" max="1000000" step="any" required>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=1000">+$1,000</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=5000">+$5,000</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=25000">+$25,000</button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('depositModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Confirm Virtual Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div id="receiptModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Official Order Receipt</div>
+        <button type="button" class="modal-close" onclick="closeModal('receiptModal')">&times;</button>
+      </div>
+      <div class="receipt-card">
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction ID:</span>
+          <span id="receiptTxnId" class="receipt-val highlight">#90001</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Date & Time:</span>
+          <span id="receiptDate" class="receipt-val">-</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Security Symbol:</span>
+          <span id="receiptSymbol" class="receipt-val">AAPL</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction Type:</span>
+          <span id="receiptType" class="badge badge-info">BUY</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Shares Traded:</span>
+          <span id="receiptQty" class="receipt-val">10</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Price:</span>
+          <span id="receiptPrice" class="receipt-val">$178.50</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Gross Transaction Value:</span>
+          <span id="receiptTotal" class="receipt-val highlight">$1,785.00</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Order Audit Status:</span>
+          <span id="receiptStatus" class="badge badge-success">COMPLETED</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('receiptModal')">Close Voucher</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/stocks.js"></script>
+</body>
+</html>

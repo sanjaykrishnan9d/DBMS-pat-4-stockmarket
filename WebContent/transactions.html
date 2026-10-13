@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order History | Stock Market Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">📈</div>
+        <div class="brand-title">ApexTrader</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="stocks.html" class="nav-link">
+          <span class="nav-icon">💹</span>
+          <span class="nav-text">Market Watch</span>
+        </a>
+        <a href="portfolio.html" class="nav-link">
+          <span class="nav-icon">💼</span>
+          <span class="nav-text">My Portfolio</span>
+        </a>
+        <a href="transactions.html" class="nav-link active">
+          <span class="nav-icon">📜</span>
+          <span class="nav-text">Order History</span>
+        </a>
+        <a href="reports.html" class="nav-link">
+          <span class="nav-icon">📑</span>
+          <span class="nav-text">Financial Reports</span>
+        </a>
+        <a href="stocks.html?tab=admin" id="adminNavLink" class="nav-link" style="display: none;">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Admin Stocks</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div id="sidebarUserAvatar" class="user-avatar">U</div>
+          <div class="user-info">
+            <div id="sidebarUserName" class="user-name">Loading...</div>
+            <div id="sidebarUserRole" class="user-role">Trader</div>
+          </div>
+        </div>
+        <button id="btnLogout" class="btn btn-outline btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="page-title-group">
+          <h1>Transaction Audit History</h1>
+          <p>Chronological record of all buy orders, sell orders, and simulated deposits.</p>
+        </div>
+
+        <div class="top-bar-actions">
+          <div class="balance-chip">
+            <div>
+              <div class="balance-label">Cash Balance</div>
+              <div id="headerCashBalance" class="balance-value">$0.00</div>
+            </div>
+            <button id="btnAddFunds" class="btn btn-success btn-sm">
+              + Add Funds
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Filter Panel -->
+      <section class="panel" style="padding: 18px 24px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+          <div style="display: flex; gap: 12px; flex: 1; min-width: 280px; max-width: 600px;">
+            <input type="text" id="symbolFilterInput" class="form-control" placeholder="Filter by symbol (e.g. AAPL)..." style="flex: 2;">
+            <select id="typeFilterSelect" class="form-control" style="flex: 1;">
+              <option value="ALL">All Types</option>
+              <option value="BUY">BUY Only</option>
+              <option value="SELL">SELL Only</option>
+              <option value="DEPOSIT">DEPOSIT Only</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="txnCountBadge" class="badge badge-info">0 Records</span>
+            <button id="btnRefreshHistory" class="btn btn-outline btn-sm">🔄 Refresh</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transactions Table Panel -->
+      <section class="panel">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Txn ID</th>
+                <th>Timestamp</th>
+                <th>Security / Description</th>
+                <th>Order Type</th>
+                <th>Quantity</th>
+                <th>Execution Price</th>
+                <th>Total Value</th>
+                <th>Status</th>
+                <th style="text-align: right;">Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsHistoryTableBody">
+              <tr>
+                <td colspan="9" class="empty-state">Loading transactions from Oracle database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Receipt Voucher Modal -->
+  <div id="receiptModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Official Order Receipt</div>
+        <button type="button" class="modal-close" onclick="closeModal('receiptModal')">&times;</button>
+      </div>
+      <div class="receipt-card">
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction ID:</span>
+          <span id="receiptTxnId" class="receipt-val highlight">#90001</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Date & Time:</span>
+          <span id="receiptDate" class="receipt-val">-</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Security Symbol:</span>
+          <span id="receiptSymbol" class="receipt-val">AAPL</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction Type:</span>
+          <span id="receiptType" class="badge badge-info">BUY</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Shares Traded:</span>
+          <span id="receiptQty" class="receipt-val">10</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Price:</span>
+          <span id="receiptPrice" class="receipt-val">$178.50</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Gross Transaction Value:</span>
+          <span id="receiptTotal" class="receipt-val highlight">$1,785.00</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Order Audit Status:</span>
+          <span id="receiptStatus" class="badge badge-success">COMPLETED</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('receiptModal')">Close Voucher</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deposit Modal -->
+  <div id="depositModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Deposit Simulated Cash</div>
+        <button type="button" class="modal-close" onclick="closeModal('depositModal')">&times;</button>
+      </div>
+      <form id="depositForm">
+        <div class="form-group">
+          <label class="form-label" for="depositAmount">Amount to Add (USD)</label>
+          <input type="number" id="depositAmount" class="form-control" placeholder="e.g. 5000" min="1" max="1000000" step="any" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('depositModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Confirm Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/transactions.js"></script>
+</body>
+</html>

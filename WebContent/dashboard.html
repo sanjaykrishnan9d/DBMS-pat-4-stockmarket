@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Stock Market Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js for financial trend and allocation visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">📈</div>
+        <div class="brand-title">ApexTrader</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link active">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="stocks.html" class="nav-link">
+          <span class="nav-icon">💹</span>
+          <span class="nav-text">Market Watch</span>
+        </a>
+        <a href="portfolio.html" class="nav-link">
+          <span class="nav-icon">💼</span>
+          <span class="nav-text">My Portfolio</span>
+        </a>
+        <a href="transactions.html" class="nav-link">
+          <span class="nav-icon">📜</span>
+          <span class="nav-text">Order History</span>
+        </a>
+        <a href="reports.html" class="nav-link">
+          <span class="nav-icon">📑</span>
+          <span class="nav-text">Financial Reports</span>
+        </a>
+        <a href="stocks.html?tab=admin" id="adminNavLink" class="nav-link" style="display: none;">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Admin Stocks</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div id="sidebarUserAvatar" class="user-avatar">U</div>
+          <div class="user-info">
+            <div id="sidebarUserName" class="user-name">Loading...</div>
+            <div id="sidebarUserRole" class="user-role">Trader</div>
+          </div>
+        </div>
+        <button id="btnLogout" class="btn btn-outline btn-sm" style="width: 100%;">
+          🚪 Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="page-title-group">
+          <h1>Trading Terminal</h1>
+          <p id="welcomeGreeting">Welcome back, trader. Real-time market overview.</p>
+        </div>
+
+        <div class="top-bar-actions">
+          <div class="balance-chip">
+            <div>
+              <div class="balance-label">Simulated Cash Balance</div>
+              <div id="headerCashBalance" class="balance-value">$0.00</div>
+            </div>
+            <button id="btnAddFunds" class="btn btn-success btn-sm">
+              + Add Funds
+            </button>
+          </div>
+          <a href="stocks.html" class="btn btn-primary btn-sm">
+            ⚡ Quick Trade
+          </a>
+        </div>
+      </header>
+
+      <!-- 6 Metrics Cards Grid -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Portfolio Market Value</span>
+            <span class="metric-icon">💼</span>
+          </div>
+          <div id="metricPortfolioValue" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Current live value of owned stocks</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Total Invested</span>
+            <span class="metric-icon">💰</span>
+          </div>
+          <div id="metricTotalInvested" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Cost basis of current holdings</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Unrealized Profit / Loss</span>
+            <span class="metric-icon">📈</span>
+          </div>
+          <div id="metricProfitLoss" class="metric-value">$0.00</div>
+          <div id="metricProfitLossPercent" class="metric-sub positive">
+            <span>+0.00%</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Available Cash</span>
+            <span class="metric-icon">💵</span>
+          </div>
+          <div id="metricCashBalance" class="metric-value">$0.00</div>
+          <div class="metric-sub text-muted">Virtual buying power</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Market Equities</span>
+            <span class="metric-icon">🌐</span>
+          </div>
+          <div id="metricAvailableStocks" class="metric-value">0</div>
+          <div class="metric-sub text-muted">Active stocks on exchange</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Total Orders</span>
+            <span class="metric-icon">📝</span>
+          </div>
+          <div id="metricTransactionCount" class="metric-value">0</div>
+          <div class="metric-sub text-muted">Executed orders to date</div>
+        </div>
+      </section>
+
+      <!-- Charts & Visual Analytics -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 28px;">
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-header">
+            <div class="panel-title">Active Market Prices ($)</div>
+            <span class="badge badge-info">Demonstration Feed</span>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="marketPricesChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom: 0;">
+          <div class="panel-header">
+            <div class="panel-title">Portfolio Allocation</div>
+            <span class="badge badge-success">Holdings</span>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="portfolioAllocationChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions Table -->
+      <section class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Recent Transactions</div>
+          <div style="display: flex; gap: 10px;">
+            <a href="stocks.html" class="btn btn-outline btn-sm">Explore Stocks</a>
+            <a href="transactions.html" class="btn btn-outline btn-sm">View All History →</a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Txn ID</th>
+                <th>Date</th>
+                <th>Stock / Item</th>
+                <th>Type</th>
+                <th>Shares</th>
+                <th>Price</th>
+                <th>Total Value</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentTransactionsTableBody">
+              <tr>
+                <td colspan="8" class="empty-state">Loading recent transactions...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODALS: DEPOSIT, TRADE, RECEIPT
+       ======================================================================== -->
+
+  <!-- 1. Simulated Deposit Modal -->
+  <div id="depositModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Deposit Simulated Cash</div>
+        <button type="button" class="modal-close" onclick="closeModal('depositModal')">&times;</button>
+      </div>
+      <form id="depositForm">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+          Note: This simulated virtual deposit increases your demo buying power. No real financial transaction occurs.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="depositAmount">Amount to Add (USD)</label>
+          <input type="number" id="depositAmount" class="form-control" placeholder="e.g. 5000" min="1" max="1000000" step="any" required>
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=1000">+$1,000</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=5000">+$5,000</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('depositAmount').value=25000">+$25,000</button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('depositModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Confirm Virtual Deposit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Universal Trade Modal (Buy/Sell) -->
+  <div id="tradeModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Execute Order</div>
+        <button type="button" class="modal-close" onclick="closeModal('tradeModal')">&times;</button>
+      </div>
+      <form id="tradeForm">
+        <input type="hidden" id="tradeStockId">
+        <div style="background: var(--bg-card); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div id="tradeStockSymbol" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan);">AAPL</div>
+            <div id="tradeStockCompany" style="font-size: 0.85rem; color: var(--text-muted);">Apple Inc.</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Current Market Price</div>
+            <div id="tradeStockPrice" style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">$178.50</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tradeType">Order Action</label>
+          <select id="tradeType" class="form-control">
+            <option value="BUY">BUY - Purchase Shares</option>
+            <option value="SELL">SELL - Liquidate Holdings</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tradeQuantity">Number of Shares</label>
+          <input type="number" id="tradeQuantity" class="form-control" value="1" min="1" step="1" required>
+        </div>
+
+        <div style="background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 18px; display: flex; justify-content: space-between;">
+          <span style="color: var(--text-muted);">Estimated Order Total:</span>
+          <strong id="tradeEstimatedTotal" style="color: var(--accent-emerald); font-size: 1.1rem;">$0.00</strong>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('tradeModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Transmit Order to Exchange</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Transaction Receipt Voucher Modal -->
+  <div id="receiptModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Official Order Receipt</div>
+        <button type="button" class="modal-close" onclick="closeModal('receiptModal')">&times;</button>
+      </div>
+      <div class="receipt-card">
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction ID:</span>
+          <span id="receiptTxnId" class="receipt-val highlight">#90001</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Date & Time:</span>
+          <span id="receiptDate" class="receipt-val">-</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Security Symbol:</span>
+          <span id="receiptSymbol" class="receipt-val">AAPL</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Transaction Type:</span>
+          <span id="receiptType" class="badge badge-info">BUY</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Shares Traded:</span>
+          <span id="receiptQty" class="receipt-val">10</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Execution Price:</span>
+          <span id="receiptPrice" class="receipt-val">$178.50</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Gross Transaction Value:</span>
+          <span id="receiptTotal" class="receipt-val highlight">$1,785.00</span>
+        </div>
+        <div class="receipt-row">
+          <span class="receipt-label">Order Audit Status:</span>
+          <span id="receiptStatus" class="badge badge-success">COMPLETED</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('receiptModal')">Close Voucher</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

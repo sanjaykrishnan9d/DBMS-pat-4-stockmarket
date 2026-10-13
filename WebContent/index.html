@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Market Management System | DBMS Lab Project</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="landing-nav">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="brand-icon">📈</div>
+      <div class="brand-title" style="font-size: 1.3rem;">ApexTrader DBMS</div>
+    </div>
+    <div style="display: flex; gap: 14px;">
+      <a href="login.html" class="btn btn-outline">Sign In</a>
+      <a href="register.html" class="btn btn-primary">Create Account</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero-section">
+      <div class="hero-badge">⚡ Oracle Database & Apache Tomcat 9 Architecture</div>
+      <h1 class="hero-title">Stock Market Management System</h1>
+      <p class="hero-subtitle">
+        A full-stack, enterprise-grade DBMS laboratory simulation platform. Execute atomic stock purchases and sales with Oracle row-level locking, monitor real-time portfolio profit & loss, and audit transaction histories.
+      </p>
+      <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+        <a href="login.html" class="btn btn-primary" style="padding: 12px 28px; font-size: 1rem;">
+          🚀 Launch Trading Terminal
+        </a>
+        <a href="register.html" class="btn btn-outline" style="padding: 12px 24px; font-size: 1rem;">
+          Register Demo Account
+        </a>
+      </div>
+    </section>
+
+    <!-- Lab Feature Highlights -->
+    <section class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-title">ACID Trade Concurrency</h3>
+        <p class="feature-desc">
+          Strict database transactions using <code>SELECT FOR UPDATE</code> locks prevent race conditions, overdrafts, and phantom share sales.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3 class="feature-title">Real-Time Portfolio Valuation</h3>
+        <p class="feature-desc">
+          Calculates weighted average buy prices, current market values, and unrealized & realized profit/loss using rigorous mathematical models.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3 class="feature-title">BCrypt Security & Sessions</h3>
+        <p class="feature-desc">
+          Salted blowfish password hashing protects student accounts. Role-based session filters restrict administrative stock operations.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🏛️</div>
+        <h3 class="feature-title">Oracle SQL*Plus Schema</h3>
+        <p class="feature-desc">
+          Pure relational DDL with sequences, triggers, foreign keys with cascade constraints, and indexed lookup columns.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <h3 class="feature-title">Audited Order Receipts</h3>
+        <p class="feature-desc">
+          Every buy, sell, and simulated cash funding operation generates an immutable transaction receipt voucher with timestamps.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <h3 class="feature-title">Financial Analytics & Reports</h3>
+        <p class="feature-desc">
+          Aggregate historical sales, net cash flows, and visual sector allocations powered by dynamic Chart.js visualizations.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer style="text-align: center; padding: 40px 20px; border-top: 1px solid var(--border-color); color: var(--text-dim); font-size: 0.85rem;">
+    <p>Stock Market Management System • College DBMS Lab Assignment • Apache Tomcat 9 & Oracle Database</p>
+    <p style="margin-top: 6px;">Sample market data for educational simulation purposes only.</p>
+  </footer>
+
+</body>
+</html>

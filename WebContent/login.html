@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | Stock Market Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="brand-icon">📈</div>
+        <div class="brand-title" style="font-size: 1.3rem;">ApexTrader</div>
+      </div>
+
+      <div class="auth-header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to your simulated stock trading terminal</p>
+      </div>
+
+      <!-- Alert for error messages -->
+      <div id="loginAlert" class="alert alert-danger" role="alert"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="username">Username or Email</label>
+          <input type="text" id="username" class="form-control" placeholder="e.g. admin or student" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+          Sign In to Terminal
+        </button>
+      </form>
+
+      <!-- Pre-seeded Demonstration Credentials -->
+      <div class="demo-credentials-box">
+        <div style="font-weight: 700; margin-bottom: 6px; color: var(--text-main);">Demo Accounts:</div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span>👑 <strong>admin</strong> / Admin@123</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="fillCreds('admin', 'Admin@123')">Auto-fill</button>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>👤 <strong>student</strong> / Student@123</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="fillCreds('student', 'Student@123')">Auto-fill</button>
+        </div>
+      </div>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="register.html">Register now</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function fillCreds(u, p) {
+      document.getElementById('username').value = u;
+      document.getElementById('password').value = p;
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alertEl = document.getElementById('loginAlert');
+      const submitBtn = document.getElementById('btnLoginSubmit');
+      alertEl.classList.remove('show');
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        alertEl.textContent = 'Please enter both username and password.';
+        alertEl.classList.add('show');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying credentials...';
+
+      try {
+        const res = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: { username, password }
+        });
+
+        if (res && res.success) {
+          showToast('Authentication successful! Loading dashboard...');
+          setTimeout(() => {
+            window.location.href = `${CONTEXT_PATH}/dashboard.html`;
+          }, 600);
+        } else {
+          throw new Error(res.message || 'Login failed');
+        }
+      } catch (err) {
+        alertEl.textContent = err.message || 'Invalid credentials or database connection error.';
+        alertEl.classList.add('show');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In to Terminal';
+      }
+    });
+  </script>
+</body>
+</html>
